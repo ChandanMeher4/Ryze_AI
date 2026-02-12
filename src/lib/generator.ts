@@ -1,4 +1,4 @@
-// src/lib/generator.ts
+
 
 export function generateReactCode(schema: any): string {
   if (!schema || !schema.components) return "";
@@ -6,13 +6,13 @@ export function generateReactCode(schema: any): string {
   const renderProps = (props: any) => {
     return Object.entries(props)
       .map(([key, value]) => {
-        // Handle Sidebar items array
+        
         if (key === "items" && Array.isArray(value)) {
           return `items={[${value.map((v) => `"${v}"`).join(", ")}]}`;
         }
-        // Handle string props
+        
         if (typeof value === "string") return `${key}="${value}"`;
-        // Handle boolean/numbers
+        
         return `${key}={${value}}`;
       })
       .join(" ");

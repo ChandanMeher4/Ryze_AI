@@ -31,6 +31,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [editedCode, setEditedCode] = useState<string>("");
 
   const currentVersion = currentIndex >= 0 ? history[currentIndex] : null;
   const generatedCode = currentVersion?.code || "";
@@ -45,7 +46,10 @@ export default function Home() {
       const res = await fetch("/api/agent/planner", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userInput: chatInput, currentCode: generatedCode }),
+        body: JSON.stringify({
+          userInput: chatInput,
+          currentCode: editedCode || generatedCode,
+        }),
       });
 
       const data = await res.json();
@@ -62,6 +66,7 @@ export default function Home() {
         const newHistory = [...history.slice(0, currentIndex + 1), newVersion];
         setHistory(newHistory);
         setCurrentIndex(newHistory.length - 1);
+        setEditedCode(jsxCode);
         setChatInput("");
       }
     } catch (err) {
@@ -72,9 +77,23 @@ export default function Home() {
     }
   };
 
-  const handleUndo = () => currentIndex > 0 && setCurrentIndex(currentIndex - 1);
-  const handleRedo = () =>
-    currentIndex < history.length - 1 && setCurrentIndex(currentIndex + 1);
+  const handleUndo = () => {
+    if (currentIndex > 0) {
+      const newIndex = currentIndex - 1;
+      setCurrentIndex(newIndex);
+      const prev = history[newIndex];
+      setEditedCode(prev?.code || "");
+    }
+  };
+
+  const handleRedo = () => {
+    if (currentIndex < history.length - 1) {
+      const newIndex = currentIndex + 1;
+      setCurrentIndex(newIndex);
+      const next = history[newIndex];
+      setEditedCode(next?.code || "");
+    }
+  };
 
   const renderComponent = (item: ComponentSchema, index: number) => {
     const Component = COMPONENT_REGISTRY[item.type];
@@ -89,7 +108,6 @@ export default function Home() {
 
   return (
     <main className="flex h-screen bg-gray-50 text-gray-900 overflow-hidden font-sans">
-      {/* LEFT PANEL */}
       <div className="w-1/3 border-r border-gray-200 bg-white flex flex-col shadow-sm z-10">
         <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
           <h2 className="text-lg font-bold flex items-center gap-2 text-gray-800">
@@ -159,7 +177,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* MIDDLE PANEL */}
       <div className="w-1/3 border-r border-gray-700 bg-[#1e1e1e] text-green-400 flex flex-col">
         <div className="p-3 border-b border-gray-700 bg-[#252526] text-xs font-mono uppercase flex justify-between">
           <span>generated_ui.tsx</span>
@@ -169,12 +186,16 @@ export default function Home() {
             </span>
           )}
         </div>
-        <pre className="flex-1 p-4 overflow-auto font-mono text-xs leading-relaxed">
-          {generatedCode || "// AI Code will appear here..."}
-        </pre>
+        <textarea
+          title="Generated code editor"
+          placeholder="// AI Code will appear here..."
+          className="flex-1 p-4 overflow-auto font-mono text-xs leading-relaxed bg-transparent outline-none resize-none text-green-400"
+          value={editedCode || generatedCode || "// AI Code will appear here..."}
+          onChange={(e) => setEditedCode(e.target.value)}
+          spellCheck={false}
+        />
       </div>
 
-      {/* RIGHT PANEL: LIVE PREVIEW */}
       <div className="flex-1 bg-gray-100 flex flex-col">
         <div className="p-3 border-b bg-white shadow-sm flex items-center gap-2 text-gray-500 text-sm">
           <LayoutTemplate size={16} /> Live Preview
