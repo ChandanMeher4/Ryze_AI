@@ -1,7 +1,13 @@
-export function Navbar({ title }: { title: string }) {
+import React from "react";
+
+export interface NavbarProps {
+  title: string;
+}
+
+export const Navbar: React.FC<NavbarProps> = ({ title }) => {
   return (
-    <div className="w-full bg-gray-800 text-white px-6 py-3">
-      <h1 className="text-lg font-bold">{title}</h1>
+    <div className="w-full bg-gray-900 text-white px-6 py-4 shadow-md flex items-center">
+      <h1 className="text-xl font-bold">{title}</h1>
     </div>
   );
-}
+};
