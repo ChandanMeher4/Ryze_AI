@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ryze AI - Deterministic UI Generator Agent
 
-## Getting Started
+A "Claude-style" AI agent that generates deterministic, safe, and editable React UI from natural language prompts.
 
-First, run the development server:
+## 🏗️ Architecture
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+This project uses a **Planner-Generator-Renderer** pattern to ensure safety and determinism:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1.  **Planner Agent (Brain):** - Accepts user intent.
+    - Outputs a strict JSON Schema (AST).
+    - Enforces a Component Whitelist (Button, Card, Navbar, Sidebar, Modal).
+    - **Model:** Llama 3 70B (via Groq) / GPT-4o-mini (via OpenAI).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2.  **Generator (Compiler):**
+    - Deterministically converts the JSON Schema into valid React JSX code strings.
+    - Handles nested children and array props recursively.
+    - Prevents hallucinated classes or styles by strictly mapping to the fixed component library.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3.  **Renderer (Runtime):**
+    - A safe runtime environment that renders the generated components.
+    - Supports "Time Travel" (Undo/Redo) by maintaining a state history stack.
 
-## Learn More
+## 🛡️ Key Features
 
-To learn more about Next.js, take a look at the following resources:
+* **Deterministic Output:** The AI cannot invent new components or styles. It must use the fixed `src/components/library` registry.
+* **Safety Layer:** All AI output is validated against a whitelist before rendering. Invalid JSON or disallowed components are rejected.
+* **Iterative Editing:** The agent receives the *current* UI state, allowing for incremental updates (e.g., "Add a button to the card") without wiping the existing layout.
+* **Time Travel:** Full Undo/Redo support using an in-memory history stack.
+* **Live Preview:** Real-time rendering of the generated code.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🛠️ Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+* **Framework:** Next.js 14 (App Router)
+* **Language:** TypeScript
+* **Styling:** Tailwind CSS
+* **AI Inference:** Groq SDK (Llama 3) / OpenAI SDK
+* **Icons:** Lucide React
 
-## Deploy on Vercel
+## 🚀 Trade-offs & Design Decisions
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+* **JSON vs. Direct Code Generation:** I chose to have the Planner output **JSON** instead of raw JSX. This acts as an Intermediate Representation (IR) layer, making validation, security, and partial updates significantly easier and safer than regex-parsing raw code.
+* **Strict Whitelisting:** To meet the "Deterministic" requirement, the system strictly ignores any AI request for a component not in the registry. This trades off "creative flexibility" for "guaranteed correctness."
+* **State Management:** I used React local state for simplicity and speed. For a production app, I would move the history stack to a global store (Zustand) or persist it to a database.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📦 How to Run
+
+1.  Clone the repository.
+2.  Install dependencies: `npm install`
+3.  Add API Key to `.env.local`: `GROQ_API_KEY=gsk_...`
+4.  Run development server: `npm run dev`
