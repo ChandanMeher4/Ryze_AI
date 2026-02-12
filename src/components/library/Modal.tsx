@@ -9,7 +9,7 @@ export interface ModalProps {
 export const Modal: React.FC<ModalProps> = ({ title, content, onClose }) => {
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/50 z-50"
+      className="absolute inset-0 flex items-center justify-center bg-black/50 z-50"
       role="dialog"
       aria-modal="true"
     >

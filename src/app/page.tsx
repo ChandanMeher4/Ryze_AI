@@ -32,11 +32,22 @@ export default function Home() {
   const [history, setHistory] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [editedCode, setEditedCode] = useState<string>("");
+  const [modalVisible, setModalVisible] = useState<boolean>(true);
 
   const currentVersion = currentIndex >= 0 ? history[currentIndex] : null;
   const generatedCode = currentVersion?.code || "";
   const currentSchema: ComponentSchema[] = currentVersion?.schema || [];
   const explanation = currentVersion?.explanation || "";
+
+  const schemaHasModal = (components: ComponentSchema[]): boolean => {
+    return components.some((c) => {
+      if (c.type === "Modal") return true;
+      if (c.children && c.children.length > 0) {
+        return schemaHasModal(c.children);
+      }
+      return false;
+    });
+  };
 
   const handleGenerate = async () => {
     if (!chatInput.trim()) return;
@@ -66,6 +77,7 @@ export default function Home() {
         const newHistory = [...history.slice(0, currentIndex + 1), newVersion];
         setHistory(newHistory);
         setCurrentIndex(newHistory.length - 1);
+        setModalVisible(schemaHasModal(newVersion.schema || []));
         setEditedCode(jsxCode);
         setChatInput("");
       }
@@ -83,6 +95,7 @@ export default function Home() {
       setCurrentIndex(newIndex);
       const prev = history[newIndex];
       setEditedCode(prev?.code || "");
+      setModalVisible(schemaHasModal(prev?.schema || []));
     }
   };
 
@@ -92,15 +105,26 @@ export default function Home() {
       setCurrentIndex(newIndex);
       const next = history[newIndex];
       setEditedCode(next?.code || "");
+      setModalVisible(schemaHasModal(next?.schema || []));
     }
   };
 
   const renderComponent = (item: ComponentSchema, index: number) => {
     const Component = COMPONENT_REGISTRY[item.type];
     if (!Component) return null;
+    if (item.type === "Modal" && !modalVisible) {
+      return null;
+    }
     const children = item.children?.map((child, i) => renderComponent(child, i));
+
+    const extraProps =
+      item.type === "Modal"
+        ? {
+            onClose: () => setModalVisible(false),
+          }
+        : {};
     return (
-      <Component key={index} {...item.props}>
+      <Component key={index} {...item.props} {...extraProps}>
         {children}
       </Component>
     );
@@ -200,7 +224,7 @@ export default function Home() {
         <div className="p-3 border-b bg-white shadow-sm flex items-center gap-2 text-gray-500 text-sm">
           <LayoutTemplate size={16} /> Live Preview
         </div>
-        <div className="flex-1 p-10 overflow-auto flex justify-center items-start">
+        <div className="flex-1 p-10 overflow-auto flex justify-center items-start relative">
           {currentSchema.length > 0 ? (
             <div className="w-full max-w-5xl space-y-6 animate-in zoom-in-95 duration-300">
               {currentSchema.map((item, i) => renderComponent(item, i))}
